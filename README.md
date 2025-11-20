@@ -751,23 +751,19 @@ mxc4005 [subcommand]
 1. `magnitude`
    - Description: Display the current magnitude of acceleration detected by the MXC4005 accelerometer.
    - Usage: `mxc4005 magnitude`
-   - Output: A single integer value representing the magnitude of acceleration.
+   - Output: A single integer value representing the magnitude of acceleration. Where 1000 is roughly 1G (expected value at rest) 
    
    Example output:
    ```
    1062
    ```
 
-    ### Used to calculate Freefall and Idle status
-    - The threshold for the iron being considered in freefall is configured here: https://github.com/iFixit/ifixit-schooner-fw/blob/a248b91345161b3ef3e2e7005d969e072421ee5d/app/src/mxc4005xc.h#L29
-    - The calculation for detecting if the iron is idle is located here: https://github.com/iFixit/ifixit-schooner-fw/blob/a248b91345161b3ef3e2e7005d969e072421ee5d/app/src/mxc4005xc.c#L191-L192
-
 ### Use Cases
-- Detecting movement or orientation changes of the device.
-
-
-Thank you for providing that output. I'll update the documentation to reflect this more accurate information:
-
+- Detecting idle
+   - See the idle timer setting
+- Detecting free-fall
+   - Iron will turn off if free-fall detected
+   
 ## thermocouple
 
 Commands related to the thermocouple temperature sensor in the soldering iron.
