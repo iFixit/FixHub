@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>FixHub Iron Setup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      background: #f5f5f5;
+      color: #222;
+    }
+    body {
+      margin: 0;
+      padding: 16px;
+    }
+    .wrap {
+      max-width: 620px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.45rem;
+    }
+    .muted {
+      color: #666;
+      font-size: .9rem;
+    }
+    .status {
+      margin: 14px 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #eee;
+      font-weight: 700;
+    }
+    .status.ok { background: #dff4e5; }
+    .status.bad { background: #ffe2e2; }
+    .status.warn { background: #fff0cc; }
+    .field {
+      margin: 16px 0;
+      padding: 12px;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      background: #fafafa;
+    }
+    .field-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    label {
+      font-weight: 800;
+      font-size: .98rem;
+    }
+    .value {
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    input, select, button {
+      font: inherit;
+      border: 1px solid #bbb;
+      border-radius: 9px;
+      padding: 10px;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 7px;
+      border-radius: 4px;
+      outline: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2.5px solid #444;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,.22);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2.5px solid #444;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,.22);
+      border-style: solid;
+    }
+    #activeTemp    { background: linear-gradient(to right, #4fc3f7, #ff9800, #f44336); }
+    #idleTemp      { background: linear-gradient(to right, #81d4fa, #ffcc02, #ff8f00); }
+    #tempCorrection{ background: linear-gradient(to right, #2196f3, #90caf9, #eceff1, #ffcc80, #f44336); }
+    #idleTimer, #sleepTimer { background: linear-gradient(to right, #a5d6a7, #1b5e20); }
+    input[type="number"], select {
+      width: 100%;
+      box-sizing: border-box;
+      background: #fff;
+    }
+    button {
+      cursor: pointer;
+      background: #222;
+      color: #fff;
+      border-color: #222;
+      font-weight: 700;
+    }
+    button.secondary {
+      background: #fff;
+      color: #222;
+    }
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .buttons button {
+      flex: 1 1 160px;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .ticks {
+      display: flex;
+      justify-content: space-between;
+      color: #666;
+      font-size: .82rem;
+      margin-top: 4px;
+    }
+    pre {
+      background: #111;
+      color: #eee;
+      border-radius: 10px;
+      padding: 12px;
+      height: 170px;
+      overflow: auto;
+      white-space: pre-wrap;
+      font-size: 12px;
+    }
+    @media (max-width: 560px) {
+      .two-col { grid-template-columns: 1fr; }
+      .buttons button { flex-basis: 100%; }
+    }
+  </style>
+</head>
+<body>
+<div id="sa_toast" style="position:fixed;top:20px;right:20px;z-index:9999;display:none;">
+  <div style="background:linear-gradient(135deg,#43a047,#00bcd4);color:#fff;padding:12px 20px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.25);font-weight:700;display:flex;align-items:center;gap:10px;font-size:.93rem;">
+    &#10003;&nbsp;Settings applied successfully!
+  </div>
+</div>
+<div class="wrap">
+  <h1>FixHub Iron Setup</h1>
+  <div class="muted">Connect the iron, choose settings, then apply.</div>
+
+  <div id="status" class="status bad">Disconnected</div>
+
+  <div class="buttons">
+    <button id="connectBtn">Connect Iron</button>
+    <button id="disconnectBtn" class="secondary" disabled>Disconnect</button>
+    <button id="readBtn" class="secondary" disabled>Read Settings</button>
+  </div>
+
+  <div class="field">
+    <div class="field-head">
+      <label for="units">Units</label>
+    </div>
+    <select id="units">
+      <option value="F">Fahrenheit</option>
+      <option value="C">Celsius</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <div class="field-head">
+      <label for="activeTemp">Working Temperature</label>
+      <span class="value" id="activeTempLabel">720 °F</span>
+    </div>
+    <input id="activeTemp" type="range" min="350" max="790" step="5" value="720">
+    <div class="ticks"><span id="activeMin">350 °F</span><span id="activeMax">790 °F</span></div>
+  </div>
+
+  <div class="field">
+    <div class="field-head">
+      <label for="idleTemp">Idle Temperature</label>
+      <span class="value" id="idleTempLabel">225 °F</span>
+    </div>
+    <input id="idleTemp" type="range" min="125" max="390" step="5" value="225">
+    <div class="ticks"><span id="idleMin">125 °F</span><span id="idleMax">390 °F</span></div>
+  </div>
+
+  <div class="two-col">
+    <div class="field">
+      <div class="field-head">
+        <label for="idleTimer">Idle Timer</label>
+        <span class="value" id="idleTimerLabel">30 sec</span>
+      </div>
+      <input id="idleTimer" type="range" min="1" max="60" step="1" value="30">
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="sleepTimer">Sleep Timer</label>
+        <span class="value" id="sleepTimerLabel">60 sec</span>
+      </div>
+      <input id="sleepTimer" type="range" min="1" max="60" step="1" value="60">
+    </div>
+  </div>
+
+  <div class="field">
+    <div class="field-head">
+      <label for="tempCorrection">Temperature Correction</label>
+      <span class="value" id="tempCorrectionLabel">0 °F</span>
+    </div>
+    <input id="tempCorrection" type="range" min="-36" max="36" step="1" value="0">
+    <div class="ticks"><span>-36 °F</span><span>36 °F</span></div>
+  </div>
+
+  <div class="two-col">
+    <div class="field">
+      <div class="field-head">
+        <label for="idleEnable">Idle Enabled</label>
+      </div>
+      <select id="idleEnable">
+        <option value="1">Enabled</option>
+        <option value="0">Disabled</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <label for="sleepEnable">Sleep Enabled</label>
+      </div>
+      <select id="sleepEnable">
+        <option value="1">Enabled</option>
+        <option value="0">Disabled</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button id="applyBtn" disabled>Apply Settings</button>
+    <button id="clearLogBtn" class="secondary">Clear Log</button>
+  </div>
+
+  <h3>Log</h3>
+  <pre id="log"></pre>
+</div>
+
+<script>
+(() => {
+  let port = null;
+  let reader = null;
+  let writer = null;
+  let readLoopRunning = false;
+  let rxBuffer = "";
+  let lastUnits = "F";
+  let reconnectWanted = false;
+  let reconnectTimer = null;
+  let lastSelectedPort = null;
+  let saToastTimer = null;
+  const AUTO_CONNECT_KEY = "fixhubIronAutoConnect";
+
+  const $ = id => document.getElementById(id);
+  const enc = new TextEncoder();
+  const dec = new TextDecoder();
+
+  const rangesF = {
+    active: { min: 350, max: 790, step: 5 },
+    idle: { min: 125, max: 390, step: 5 },
+    correction: { min: -36, max: 36, step: 1 }
+  };
+
+  const rangesC = {
+    active: {
+      min: roundToStep(fToC(rangesF.active.min), 1),
+      max: roundToStep(fToC(rangesF.active.max), 1),
+      step: 1
+    },
+    idle: {
+      min: roundToStep(fToC(rangesF.idle.min), 1),
+      max: roundToStep(fToC(rangesF.idle.max), 1),
+      step: 1
+    },
+    correction: {
+      min: roundToStep(fToC(rangesF.correction.min), 1),
+      max: roundToStep(fToC(rangesF.correction.max), 1),
+      step: 1
+    }
+  };
+
+  function cToF(c) { return (c * 9 / 5) + 32; }
+  function fToC(f) { return (f - 32) * 5 / 9; }
+
+  function roundToStep(value, step) {
+    return Math.round(value / step) * step;
+  }
+
+  function clamp(n, min, max) {
+    return Math.min(max, Math.max(min, n));
+  }
+
+  function getRanges(units) {
+    return units === "F" ? rangesF : rangesC;
+  }
+
+  function tempToDisplayFromC(c, units, kind) {
+    const r = getRanges(units)[kind];
+    const val = units === "F" ? cToF(c) : c;
+    return clamp(roundToStep(val, Number(r.step)), Number(r.min), Number(r.max));
+  }
+
+  function convertDisplayedTemp(value, fromUnits, toUnits, kind) {
+    if (fromUnits === toUnits) return value;
+    const n = Number(value);
+    if (!Number.isFinite(n)) return value;
+
+    const c = fromUnits === "F" ? fToC(n) : n;
+    return tempToDisplayFromC(c, toUnits, kind);
+  }
+
+  function applyRange(el, range) {
+    el.min = range.min;
+    el.max = range.max;
+    el.step = range.step;
+    el.value = clamp(roundToStep(Number(el.value), Number(range.step)), Number(range.min), Number(range.max));
+  }
+
+  function setTempInputLimits(units) {
+    const r = getRanges(units);
+
+    applyRange($("activeTemp"), r.active);
+    applyRange($("idleTemp"), r.idle);
+    applyRange($("tempCorrection"), r.correction);
+
+    $("activeMin").textContent = `${r.active.min} °${units}`;
+    $("activeMax").textContent = `${r.active.max} °${units}`;
+    $("idleMin").textContent = `${r.idle.min} °${units}`;
+    $("idleMax").textContent = `${r.idle.max} °${units}`;
+  }
+
+  function updateLabels() {
+    const u = $("units").value;
+    $("activeTempLabel").textContent = `${$("activeTemp").value} °${u}`;
+    $("idleTempLabel").textContent = `${$("idleTemp").value} °${u}`;
+    $("idleTimerLabel").textContent = formatSeconds(Number($("idleTimer").value));
+    $("sleepTimerLabel").textContent = formatSeconds(Number($("sleepTimer").value));
+    $("tempCorrectionLabel").textContent = `${$("tempCorrection").value} °${u}`;
+  }
+
+  function formatSeconds(sec) {
+    sec = Number(sec) || 0;
+    if (sec < 60) return `${sec} sec`;
+    const min = Math.floor(sec / 60);
+    const rem = sec % 60;
+    return rem ? `${min}m ${rem}s` : `${min} min`;
+  }
+
+  function log(msg) {
+    const el = $("log");
+    const time = new Date().toLocaleTimeString();
+    el.textContent += `[${time}] ${msg}\n`;
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function setStatus(text, mode = "bad") {
+    const el = $("status");
+    el.textContent = text;
+    el.className = `status ${mode}`;
+  }
+
+  function showToast() {
+    const t = document.getElementById("sa_toast");
+    if (!t) return;
+    t.style.transition = "none";
+    t.style.opacity = "1";
+    t.style.display = "block";
+    clearTimeout(saToastTimer);
+    saToastTimer = setTimeout(() => {
+      t.style.transition = "opacity .4s";
+      t.style.opacity = "0";
+      setTimeout(() => { t.style.display = "none"; }, 450);
+    }, 3000);
+  }
+
+  function setConnectedState(isConnected) {
+    $("connectBtn").disabled = isConnected;
+    $("disconnectBtn").disabled = !isConnected;
+    $("readBtn").disabled = !isConnected;
+    $("applyBtn").disabled = !isConnected;
+  }
+
+  function cleanText(s) {
+    return s.replace(/\x1b\[[0-9;?]*[ -/]*[@-~]/g, "").replace(/\x1b./g, "");
+  }
+
+  async function requestPort() {
+    const selected = await navigator.serial.requestPort({
+      filters: [{ usbVendorId: 13420, usbProductId: 7937 }]
+    });
+    localStorage.setItem(AUTO_CONNECT_KEY, "1");
+    return selected;
+  }
+
+  async function findPreviouslyGrantedPort() {
+    if (!("serial" in navigator)) return null;
+
+    const ports = await navigator.serial.getPorts();
+
+    // Prefer the actual iFixit iron if USB info is available.
+    const iron = ports.find(p => {
+      const info = p.getInfo ? p.getInfo() : {};
+      return info.usbVendorId === 13420 && info.usbProductId === 7937;
+    });
+
+    return iron || ports[0] || null;
+  }
+
+  async function autoConnectOnPageLoad() {
+    if (localStorage.getItem(AUTO_CONNECT_KEY) !== "1") return;
+
+    try {
+      const granted = await findPreviouslyGrantedPort();
+      if (!granted) {
+        setStatus("Disconnected", "bad");
+        return;
+      }
+
+      lastSelectedPort = granted;
+      port = granted;
+      reconnectWanted = true;
+      setStatus("Reconnecting to previous port...", "warn");
+      await openPort();
+    } catch (err) {
+      setStatus("Previous port unavailable", "warn");
+      log("Auto-connect failed: " + (err.message || err));
+    }
+  }
+
+  async function connect(useExisting = false) {
+    if (!("serial" in navigator)) {
+      alert("This browser does not support Web Serial. Use Chrome, Edge, or Brave.");
+      return;
+    }
+
+    reconnectWanted = true;
+    clearReconnectTimer();
+
+    if (!useExisting || !lastSelectedPort) {
+      port = await requestPort();
+      lastSelectedPort = port;
+    } else {
+      port = lastSelectedPort;
+    }
+
+    await openPort();
+  }
+
+  async function openPort() {
+    await port.open({ baudRate: 115200 });
+
+    writer = port.writable.getWriter();
+    reader = port.readable.getReader();
+    readLoopRunning = true;
+    readLoop();
+
+    setConnectedState(true);
+    setStatus("Connected", "ok");
+    log("Connected");
+
+    await command("version").catch(() => {});
+    await readSettings();
+  }
+
+  async function disconnect(manual = true) {
+    if (manual) reconnectWanted = false;
+    clearReconnectTimer();
+    readLoopRunning = false;
+
+    try {
+      if (reader) {
+        await reader.cancel();
+        reader.releaseLock();
+      }
+    } catch {}
+    reader = null;
+
+    try {
+      if (writer) writer.releaseLock();
+    } catch {}
+    writer = null;
+
+    try {
+      if (port) await port.close();
+    } catch {}
+
+    if (manual) {
+      localStorage.removeItem(AUTO_CONNECT_KEY);
+      port = null;
+      lastSelectedPort = null;
+      setConnectedState(false);
+      setStatus("Disconnected", "bad");
+      log("Disconnected");
+    }
+  }
+
+  async function handleDisconnect(reason) {
+    readLoopRunning = false;
+    setConnectedState(false);
+
+    try { if (reader) reader.releaseLock(); } catch {}
+    try { if (writer) writer.releaseLock(); } catch {}
+    reader = null;
+    writer = null;
+
+    log(reason || "Device disconnected");
+
+    if (reconnectWanted && lastSelectedPort) {
+      setStatus("Disconnected - reconnecting...", "warn");
+      scheduleReconnect();
+    } else {
+      setStatus("Disconnected", "bad");
+    }
+  }
+
+  function clearReconnectTimer() {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+  }
+
+  function scheduleReconnect() {
+    clearReconnectTimer();
+    reconnectTimer = setTimeout(async () => {
+      try {
+        if (!lastSelectedPort) return;
+        log("Trying reconnect...");
+        port = lastSelectedPort;
+        await openPort();
+      } catch (err) {
+        setStatus("Disconnected - reconnecting...", "warn");
+        scheduleReconnect();
+      }
+    }, 1500);
+  }
+
+  async function readLoop() {
+    try {
+      while (readLoopRunning && reader) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (!value) continue;
+        rxBuffer += cleanText(dec.decode(value));
+      }
+      if (readLoopRunning) await handleDisconnect("Serial stream ended");
+    } catch (err) {
+      if (readLoopRunning) await handleDisconnect("Read error: " + (err.message || err));
+    }
+  }
+
+  async function send(cmd) {
+    if (!writer) throw new Error("Not connected");
+    log("> " + cmd);
+    await writer.write(enc.encode(cmd + "\r\n"));
+  }
+
+  function waitForPrompt(timeoutMs = 3000) {
+    return new Promise((resolve, reject) => {
+      const started = Date.now();
+      const timer = setInterval(() => {
+        if (rxBuffer.includes("ifixitiron:~$")) {
+          const out = rxBuffer;
+          rxBuffer = "";
+          clearInterval(timer);
+          resolve(out);
+        } else if (Date.now() - started > timeoutMs) {
+          clearInterval(timer);
+          reject(new Error("Timeout waiting for prompt"));
+        }
+      }, 25);
+    });
+  }
+
+  async function command(cmd, timeoutMs = 3000) {
+    rxBuffer = "";
+    await send(cmd);
+    const raw = await waitForPrompt(timeoutMs);
+    const lines = raw
+      .split(/\r?\n/)
+      .map(s => s.trim())
+      .filter(Boolean)
+      .filter(s => s !== cmd)
+      .filter(s => !s.includes("ifixitiron:~$"));
+
+    log("< " + lines.join(" | "));
+    return lines;
+  }
+
+  function firstValue(lines) {
+    return lines.length ? lines[0].trim() : "";
+  }
+
+  function enabledToValue(s) {
+    return /^enabled$/i.test(s) ? "1" : "0";
+  }
+
+  async function getSetting(name) {
+    return firstValue(await command(`settings get ${name}`));
+  }
+
+  async function readSettings() {
+    try {
+      const details = await command("heater details");
+
+      let activeC = null;
+      let idleC = null;
+      for (const line of details) {
+        let m;
+        if ((m = line.match(/active temp:\s*([\d.]+)\s*C/i))) activeC = Number(m[1]);
+        if ((m = line.match(/idle temp:\s*([\d.]+)\s*C/i))) idleC = Number(m[1]);
+      }
+
+      const units = await getSetting("units") || "F";
+      $("units").value = units;
+      lastUnits = units;
+      setTempInputLimits(units);
+
+      if (activeC != null) $("activeTemp").value = tempToDisplayFromC(activeC, units, "active");
+      if (idleC != null) $("idleTemp").value = tempToDisplayFromC(idleC, units, "idle");
+
+      $("idleTimer").value = await getSetting("idletimer") || "30";
+      $("idleEnable").value = enabledToValue(await getSetting("idletimerenable"));
+      $("sleepTimer").value = await getSetting("sleeptimer") || "60";
+      $("sleepEnable").value = enabledToValue(await getSetting("sleeptimerenable"));
+      $("tempCorrection").value = await getSetting("tempcorrection") || "0";
+
+      updateLabels();
+      log("Settings loaded");
+    } catch (err) {
+      log("Read settings failed: " + (err.message || err));
+    }
+  }
+
+  async function applySettings() {
+    const units = $("units").value;
+    const commands = [
+      `settings set units ${units}`,
+      `settings set activetemp ${Math.round(Number($("activeTemp").value))}`,
+      `settings set idletemp ${Math.round(Number($("idleTemp").value))}`,
+      `settings set idletimer ${Math.round(Number($("idleTimer").value))}`,
+      `settings set idletimerenable ${$("idleEnable").value}`,
+      `settings set sleeptimer ${Math.round(Number($("sleepTimer").value))}`,
+      `settings set sleeptimerenable ${$("sleepEnable").value}`,
+      `settings set tempcorrection ${Math.round(Number($("tempCorrection").value))}`
+    ];
+
+    try {
+      for (const cmd of commands) await command(cmd);
+      log("Settings applied");
+      await readSettings();
+      showToast();
+    } catch (err) {
+      log("Apply failed: " + (err.message || err));
+    }
+  }
+
+  function handleUnitsChanged() {
+    const newUnits = $("units").value;
+
+    $("activeTemp").value = convertDisplayedTemp($("activeTemp").value, lastUnits, newUnits, "active");
+    $("idleTemp").value = convertDisplayedTemp($("idleTemp").value, lastUnits, newUnits, "idle");
+    $("tempCorrection").value = convertDisplayedTemp($("tempCorrection").value, lastUnits, newUnits, "correction");
+
+    lastUnits = newUnits;
+    setTempInputLimits(newUnits);
+    updateLabels();
+  }
+
+  for (const id of ["activeTemp", "idleTemp", "idleTimer", "sleepTimer", "tempCorrection"]) {
+    $(id).addEventListener("input", updateLabels);
+  }
+
+  $("units").addEventListener("change", handleUnitsChanged);
+  $("connectBtn").addEventListener("click", () => connect(false).catch(err => log("Connect failed: " + (err.message || err))));
+  $("disconnectBtn").addEventListener("click", () => disconnect(true));
+  $("readBtn").addEventListener("click", () => readSettings());
+  $("applyBtn").addEventListener("click", () => applySettings());
+  $("clearLogBtn").addEventListener("click", () => $("log").textContent = "");
+
+  if ("serial" in navigator) {
+    navigator.serial.addEventListener("disconnect", () => {
+      if (port) handleDisconnect("Device unplugged");
+    });
+  }
+
+  setTempInputLimits($("units").value);
+  updateLabels();
+  autoConnectOnPageLoad();
+})();
+</script>
+</body>
+</html>
