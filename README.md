@@ -592,6 +592,7 @@ usbpd [subcommand]
 
 ### Notes
 - The `status` command provides the most detailed information and is useful for debugging USB-PD issues.
+- The `status` command will return Port 1 instead of Rear, which may be confusing.
 - The `vbus` command gives a quick view of the current power delivery situation on each port.
 - The `summary` command is helpful for a quick overview of all ports' states and power consumption.
 
